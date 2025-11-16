@@ -4,10 +4,6 @@ on:
   push:
     branches: [ main ]  # Triggers automatically on push to the main branch for immediate execution
 
-env:
-  BOT_TOKEN: '8547420195:AAGPMW2FrredcHXQPf_9w3SZanvh-iO40-A'
-  CHAT_ID: '506349033'
-
 jobs:
   send-time:
     runs-on: ubuntu-latest
@@ -21,7 +17,4 @@ jobs:
           CURRENT_TIME_LOCAL=$(date +"%Y-%m-%d %H:%M:%S %Z")
           
           MESSAGE="Current UTC time: ${CURRENT_TIME_UTC}\nCurrent local time: ${CURRENT_TIME_LOCAL}"
-          
-          curl -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-            -H "Content-Type: application/json" \
-            -d "{"chat_id":"${CHAT_ID}","text":"${MESSAGE}"}"
+
