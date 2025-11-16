@@ -1,0 +1,47 @@
+name: testflow
+on:
+  workflow_dispatch:
+
+jobs:
+  testflow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340  # Safety limit: ~5h40m
+
+    steps:
+    - name: Install CLI
+      run: |
+        curl -fsSL https://cli.nexus.xyz/ | sh
+        echo "$HOME/.nexus/bin" >> $GITHUB_PATH
+
+    - name: Start
+      run: |
+        set -e
+        NODE_ID=37210152  # for stone-gass
+
+        echo "🚀 Starting (Node ID: $NODE_ID)"
+        nexus-cli start --node-id "$NODE_ID" --max-threads 3 --headless &
+        NEXUS_PID=$!
+
+        current_epoch=$(date -u +%s)
+        current_hour=$((10#$(date -u +%H)))
+
+        next_boundary=$(( ((current_hour / 6 + 1) * 6) % 24 ))
+        next_boundary_epoch=$(date -u -d "$(date -u +%Y-%m-%d) $next_boundary:00:00" +%s)
+
+        if [ "$next_boundary_epoch" -le "$current_epoch" ]; then
+          next_boundary_epoch=$(( next_boundary_epoch + 86400 ))
+        fi
+
+        seconds_until_stop=$(( next_boundary_epoch - current_epoch - 1200 ))
+        if [ "$seconds_until_stop" -lt 1200 ]; then
+          echo "⚠️ Less than 20m until next schedule — running short session."
+          seconds_until_stop=1200
+        fi
+
+        echo "🕒 Current UTC time: $(date -u)"
+        echo "⏰ Next 6h boundary: $(date -u -d "@$next_boundary_epoch")"
+        echo "🛏️ Will stop in $((seconds_until_stop / 60)) minutes."
+
+        sleep "$seconds_until_stop"
+        echo "🛑 Stopping at $(date -u)"
+        kill "$NEXUS_PID" || true
